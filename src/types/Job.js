@@ -18,7 +18,8 @@
  * @property {string} title
  * @property {string} slug - URL-friendly unique identifier
  * @property {string} description
- * @property {{name: string, description: string, avatarUrl: string}} company
+ * @property {string} experienceRequired
+ * @property {{name: string, description: string, avatarUrl: string, website: string}} company
  * @property {string} industry
  * @property {JobType} jobType
  * @property {{min: number, max: number, currency: string, period: string}} salary
