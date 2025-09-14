@@ -12,6 +12,7 @@ import {
   Alert
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import {
   DndContext,
   DragOverlay,
@@ -41,6 +42,7 @@ const FILTER_TABS = [
 ];
 
 function CandidatesPage() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeId, setActiveId] = useState(null);
@@ -92,7 +94,7 @@ function CandidatesPage() {
 
   const handleCandidateClick = (candidate) => {
     console.log('Navigate to candidate:', candidate.id);
-    // navigate(`/candidates/${candidate.id}`);
+    navigate(`/candidates/${candidate.id}`);
   };
 
   const handleDragStart = (event) => {

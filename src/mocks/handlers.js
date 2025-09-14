@@ -176,6 +176,20 @@ export const handlers = [
     });
   }),
 
+  // Get individual candidate
+  http.get('/api/candidates/:id', async ({ params }) => {
+    return withLatencyAndErrors(async () => {
+      const { id } = params;
+      const candidate = await db.candidates.get(id);
+      
+      if (!candidate) {
+        return HttpResponse.json({ error: 'Candidate not found' }, { status: 404 });
+      }
+
+      return HttpResponse.json(candidate);
+    });
+  }),
+
   http.post('/api/candidates', async ({ request }) => {
     return withLatencyAndErrors(async () => {
       const candidateData = await request.json();
