@@ -5,7 +5,10 @@ const API_BASE = '/api';
 // Generic fetch wrapper with error handling
 const fetchAPI = async (url, options = {}) => {
   try {
-    const response = await fetch(`${API_BASE}${url}`, {
+    const fullUrl = `${API_BASE}${url}`;
+    console.log(`🌐 Making API request to: ${fullUrl}`);
+    
+    const response = await fetch(fullUrl, {
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
@@ -13,14 +16,18 @@ const fetchAPI = async (url, options = {}) => {
       ...options,
     });
 
+    console.log(`📊 API response status: ${response.status} for ${fullUrl}`);
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log(`✅ API response data:`, data);
+    return data;
   } catch (error) {
-    console.error(`API Error for ${url}:`, error);
+    console.error(`❌ API Error for ${url}:`, error);
     throw error;
   }
 };
@@ -85,6 +92,12 @@ export const candidatesAPI = {
     }),
 
   getCandidateTimeline: (id) => fetchAPI(`/candidates/${id}/timeline`),
+
+  getCandidateCountsByJob: (jobIds) => 
+    fetchAPI('/candidates/counts-by-job', {
+      method: 'POST',
+      body: JSON.stringify({ jobIds }),
+    }),
 };
 
 // Assessments API

@@ -20,6 +20,11 @@ const withLatencyAndErrors = async (handler, errorRate = 0.1) => {
 };
 
 export const handlers = [
+  // Test endpoint to verify MSW is working
+  http.get('/api/test', () => {
+    return HttpResponse.json({ message: 'MSW is working' });
+  }),
+
   // Jobs endpoints
   http.get('/api/jobs', async ({ request }) => {
     return withLatencyAndErrors(async () => {
@@ -57,6 +62,19 @@ export const handlers = [
           totalPages: Math.ceil(total / pageSize)
         }
       });
+    });
+  }),
+
+  http.get('/api/jobs/:id', async ({ params }) => {
+    return withLatencyAndErrors(async () => {
+      const { id } = params;
+      const job = await db.jobs.get(id);
+      
+      if (!job) {
+        return HttpResponse.json({ error: 'Job not found' }, { status: 404 });
+      }
+
+      return HttpResponse.json(job);
     });
   }),
 
@@ -232,6 +250,23 @@ export const handlers = [
         .toArray();
 
       return HttpResponse.json(timeline);
+    });
+  }),
+
+  http.post('/api/candidates/counts-by-job', async ({ request }) => {
+    return withLatencyAndErrors(async () => {
+      const { jobIds } = await request.json();
+      const counts = {};
+      
+      for (const jobId of jobIds) {
+        const count = await db.candidates
+          .where('jobId')
+          .equals(jobId)
+          .count();
+        counts[jobId] = count;
+      }
+
+      return HttpResponse.json(counts);
     });
   }),
 

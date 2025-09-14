@@ -50,6 +50,15 @@ export const useCreateCandidate = () => {
   });
 };
 
+// Get candidate counts by job ID
+export const useCandidateCountsByJob = (jobIds = []) => {
+  return useQuery({
+    queryKey: ['candidateCounts', jobIds],
+    queryFn: () => candidatesAPI.getCandidateCountsByJob(jobIds),
+    enabled: jobIds.length > 0,
+  });
+};
+
 // Update candidate mutation (for stage changes, etc.)
 export const useUpdateCandidate = () => {
   const queryClient = useQueryClient();
@@ -65,6 +74,8 @@ export const useUpdateCandidate = () => {
       }
       // Invalidate lists to refresh
       queryClient.invalidateQueries({ queryKey: candidatesKeys.lists() });
+      // Invalidate candidate counts
+      queryClient.invalidateQueries({ queryKey: ['candidateCounts'] });
     },
   });
 };

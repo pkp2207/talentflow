@@ -5,6 +5,20 @@ import { db } from '../db/index.js';
 const JOB_STATUSES = ['active', 'archived'];
 const CANDIDATE_STAGES = ['applied', 'screen', 'tech', 'offer', 'hired', 'rejected'];
 const TECH_TAGS = ['JavaScript', 'React', 'Node.js', 'Python', 'Java', 'PHP', 'Angular', 'Vue.js', 'TypeScript', 'Go'];
+const WORKPLACE_TYPES = ['On-site', 'Remote', 'Hybrid'];
+const JOB_TYPES = ['Full-Time', 'Internship', 'Contract'];
+
+// Sample companies
+const COMPANIES = [
+  { name: 'TechCorp Inc.', description: 'Leading technology company', website: 'https://techcorp.com' },
+  { name: 'Innovation Labs', description: 'AI and machine learning solutions', website: 'https://innovationlabs.com' },
+  { name: 'Digital Solutions', description: 'Full-stack development agency', website: 'https://digitalsolutions.com' },
+  { name: 'StartupX', description: 'Fast-growing fintech startup', website: 'https://startupx.com' },
+  { name: 'Enterprise Systems', description: 'Enterprise software solutions', website: 'https://enterprisesystems.com' },
+  { name: 'CloudTech', description: 'Cloud infrastructure services', website: 'https://cloudtech.com' },
+  { name: 'DataFlow Inc.', description: 'Big data analytics platform', website: 'https://dataflow.com' },
+  { name: 'CodeFactory', description: 'Software development consultancy', website: 'https://codefactory.com' },
+];
 
 // Generate a URL-friendly slug from a title
 const generateSlug = (title) => {
@@ -22,13 +36,31 @@ export const createSeedData = () => {
   const jobs = Array.from({ length: 25 }, (_, index) => {
     const title = faker.person.jobTitle();
     const createdAt = faker.date.past({ years: 1 }).toISOString();
+    const company = faker.helpers.arrayElement(COMPANIES);
     
     return {
       id: uuidv4(),
       title,
       slug: `${generateSlug(title)}-${index}`,
       description: faker.lorem.paragraphs(2),
+      experienceRequired: faker.helpers.arrayElement(['Entry-level', 'Mid-level', 'Senior', 'Lead']),
+      company: {
+        name: company.name,
+        description: company.description,
+        avatarUrl: '', // We'll use the default icon
+        website: company.website
+      },
+      industry: faker.helpers.arrayElement(['Technology', 'Finance', 'Healthcare', 'E-commerce', 'Education']),
+      jobType: faker.helpers.arrayElement(JOB_TYPES),
+      salary: {
+        min: faker.number.int({ min: 4, max: 12 }) * 1000,
+        max: faker.number.int({ min: 15, max: 25 }) * 1000,
+        currency: '$',
+        period: 'month'
+      },
       status: faker.helpers.arrayElement(JOB_STATUSES),
+      location: faker.location.city(),
+      workplaceType: faker.helpers.arrayElement(WORKPLACE_TYPES),
       tags: faker.helpers.arrayElements(TECH_TAGS, { min: 2, max: 5 }),
       order: index,
       createdAt,
@@ -205,14 +237,70 @@ export const createSeedData = () => {
 // Seed the database
 export const seedDatabase = async () => {
   try {
-    // Check if data already exists
-    const existingJobs = await db.jobs.count();
-    if (existingJobs > 0) {
-      console.log('Database already seeded');
-      return;
-    }
-
+    // Force reseed for new database schema
     console.log('Seeding database...');
+    const seedData = createSeedData();
+
+    // Clear existing data and add seed data
+    await db.transaction('rw', db.jobs, db.candidates, db.candidateTimeline, db.assessments, db.users, async () => {
+      await db.jobs.clear();
+      await db.candidates.clear();
+      await db.candidateTimeline.clear();
+      await db.assessments.clear();
+      await db.users.clear();
+      
+      // Only clear if the table exists
+      try {
+        await db.assessmentResponses.clear();
+      } catch {
+        // Table might not exist yet
+      }
+
+      await db.jobs.bulkAdd(seedData.jobs);
+      await db.candidates.bulkAdd(seedData.candidates);
+      await db.candidateTimeline.bulkAdd(seedData.candidateTimeline);
+      await db.assessments.bulkAdd(seedData.assessments);
+      await db.users.bulkAdd(seedData.users);
+    });
+
+    console.log('Database seeded successfully!');
+    console.log(`Added ${seedData.jobs.length} jobs`);
+    console.log(`Added ${seedData.candidates.length} candidates`);
+    console.log(`Added ${seedData.candidateTimeline.length} timeline entries`);
+    console.log(`Added ${seedData.assessments.length} assessments`);
+    console.log(`Added ${seedData.users.length} users`);
+  } catch (error) {
+    console.error('Error seeding database:', error);
+    
+    // If it's a schema error, try to reset and reseed
+    if (error.message?.includes('InvalidAccessError') || error.message?.includes('createIndex') || error.message?.includes('UpgradeError')) {
+      console.log('Schema error detected, attempting database reset...');
+      const { resetDatabase } = await import('../db/index.js');
+      await resetDatabase();
+      
+      // Try seeding again after reset
+      console.log('Attempting to seed after reset...');
+      const seedData = createSeedData();
+      
+      await db.transaction('rw', db.jobs, db.candidates, db.candidateTimeline, db.assessments, db.users, async () => {
+        await db.jobs.bulkAdd(seedData.jobs);
+        await db.candidates.bulkAdd(seedData.candidates);
+        await db.candidateTimeline.bulkAdd(seedData.candidateTimeline);
+        await db.assessments.bulkAdd(seedData.assessments);
+        await db.users.bulkAdd(seedData.users);
+      });
+      
+      console.log('Database reset and seeded successfully!');
+    } else {
+      throw error;
+    }
+  }
+};
+
+// Force reseed the database (useful for development)
+export const reseedDatabase = async () => {
+  try {
+    console.log('Reseeding database...');
     const seedData = createSeedData();
 
     // Clear existing data and add seed data
@@ -231,13 +319,13 @@ export const seedDatabase = async () => {
       await db.users.bulkAdd(seedData.users);
     });
 
-    console.log('Database seeded successfully!');
+    console.log('Database reseeded successfully!');
     console.log(`Added ${seedData.jobs.length} jobs`);
     console.log(`Added ${seedData.candidates.length} candidates`);
     console.log(`Added ${seedData.candidateTimeline.length} timeline entries`);
     console.log(`Added ${seedData.assessments.length} assessments`);
     console.log(`Added ${seedData.users.length} users`);
   } catch (error) {
-    console.error('Error seeding database:', error);
+    console.error('Error reseeding database:', error);
   }
 };

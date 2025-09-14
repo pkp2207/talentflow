@@ -108,8 +108,9 @@ function Layout({ children }) {
         sx={{
           flexGrow: 1,
           p: 3,
-          backgroundColor: '#f5f5f5',
-          minHeight: '100vh'
+          backgroundColor: '#f8f9fa',
+          minHeight: '100vh',
+          marginLeft: `${drawerWidth}px`
         }}
       >
         <Toolbar />
