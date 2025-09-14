@@ -39,7 +39,7 @@ function Layout({ children }) {
         position="fixed" 
         sx={{ 
           zIndex: theme.zIndex.drawer + 1,
-          backgroundColor: '#1976d2'
+          backgroundColor: '#1C2833'
         }}
       >
         <Toolbar>
